@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security OUT/IN - DSI Leave System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/theme.css" rel="stylesheet">
+</head>
+<body>
+  <div id="appTopbar"></div>
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+
+  <div class="container-xl py-4">
+    <div class="card p-3 p-md-4">
+      <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+        <div>
+          <h3 class="fw-bold mb-1">Security OUT/IN</h3>
+          <div class="small-muted">Approved leaves ready for OUT/IN marking.</div>
+        </div>
+        <button class="btn btn-outline-primary" id="btnReload">Reload</button>
+      </div>
+    </div>
+
+    <div class="card p-3 p-md-4 section-gap">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Leave ID</th>
+              <th>Emp No</th>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Planned</th>
+              <th>Actual OUT</th>
+              <th>Actual IN</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="body"><tr><td colspan="8" class="small-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/layout.js"></script>
+
+  <script>
+    requireAuth();
+    renderTopbar("security.html");
+
+    function ensureSecurity(){
+      const role=String(getUser()?.role||"").toUpperCase();
+      if(role!=="SECURITY"){
+        showToast("Access denied (SECURITY only)","danger");
+        setTimeout(()=>location.href=roleHome(role), 400);
+        return false;
+      }
+      return true;
+    }
+
+    async function loadPending(){
+      if(!ensureSecurity()) return;
+      const body=document.getElementById("body");
+      body.innerHTML=`<tr><td colspan="8" class="small-muted">Loading…</td></tr>`;
+      try{
+        const res=await apiFetch("/api/security/pending");
+        const rows=res?.rows||res||[];
+        if(!rows.length){ body.innerHTML=`<tr><td colspan="8" class="small-muted">No pending leaves.</td></tr>`; return; }
+        body.innerHTML="";
+        rows.forEach(r=>{
+          const planned = `${String(r.planned_out||"").slice(0,5)} - ${String(r.planned_in||"").slice(0,5)}`;
+          body.insertAdjacentHTML("beforeend",`
+            <tr>
+              <td class="fw-bold">#${escapeHtml(r.id)}</td>
+              <td>${escapeHtml(r.emp_no||"—")}</td>
+              <td>${escapeHtml(r.full_name||"—")}</td>
+              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
+              <td>${escapeHtml(planned)}</td>
+              <td>${escapeHtml(String(r.actual_out||"").slice(0,5) || "—")}</td>
+              <td>${escapeHtml(String(r.actual_in||"").slice(0,5) || "—")}</td>
+              <td class="text-end">
+                <button class="btn btn-primary btn-sm me-2" data-out="${escapeHtml(r.id)}" ${r.actual_out ? "disabled" : ""}>OUT</button>
+                <button class="btn btn-outline-primary btn-sm" data-in="${escapeHtml(r.id)}" ${!r.actual_out || r.actual_in ? "disabled" : ""}>IN</button>
+              </td>
+            </tr>
+          `);
+        });
+
+        body.querySelectorAll("[data-out]").forEach(b=>b.addEventListener("click", async ()=>{
+          const id=b.getAttribute("data-out");
+          b.disabled=true;
+          try{ await apiFetch(`/api/security/${id}/out`, { method:"POST" }); showToast("Marked OUT","success"); loadPending(); }
+          catch(e){ showToast(e.message,"danger"); b.disabled=false; }
+        }));
+
+        body.querySelectorAll("[data-in]").forEach(b=>b.addEventListener("click", async ()=>{
+          const id=b.getAttribute("data-in");
+          b.disabled=true;
+          try{ await apiFetch(`/api/security/${id}/in`, { method:"POST" }); showToast("Marked IN","success"); loadPending(); }
+          catch(e){ showToast(e.message,"danger"); b.disabled=false; }
+        }));
+
+      }catch(err){
+        body.innerHTML=`<tr><td colspan="8" class="text-danger small">${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    document.getElementById("btnReload").addEventListener("click", loadPending);
+    loadPending();
+  </script>
+</body>
+</html>

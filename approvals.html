@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Approvals - DSI Leave System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/theme.css" rel="stylesheet">
+</head>
+<body>
+  <div id="appTopbar"></div>
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+
+  <div class="container-xl py-4">
+    <div class="card p-3 p-md-4">
+      <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+        <div>
+          <h3 class="fw-bold mb-1">Approvals</h3>
+          <div class="small-muted" id="hint">Pending requests for your role.</div>
+        </div>
+        <button class="btn btn-outline-primary" id="btnReload">Reload</button>
+      </div>
+    </div>
+
+    <div class="card p-3 p-md-4 section-gap">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Employee</th>
+              <th>Date</th>
+              <th>OUT</th>
+              <th>IN</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="body"><tr><td colspan="7" class="small-muted">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/layout.js"></script>
+
+  <script>
+    requireAuth();
+    renderTopbar("approvals.html");
+
+    function statusBadge(status){
+      const s=(status||"—").toString();
+      const cls=s.includes("FINAL_APPROVED")||s==="FINAL_APPROVED" ? "bg-approved" :
+                (s.includes("FINAL_REJECTED")||s.includes("REJECTED")) ? "bg-rejected" :
+                (s.includes("APPEAL")) ? "bg-appealed" : "bg-pending";
+      return `<span class="badge ${cls}">${escapeHtml(s)}</span>`;
+    }
+
+    function roleEndpoint(role){
+      const r=String(role||"").toUpperCase();
+      if(r==="HOD") return { list:"/api/hod/pending", approve:"/api/hod/approve", reject:"/api/hod/reject", label:"HOD approvals (employee requests)" };
+      if(r==="ADMIN") return { list:"/api/admin/pending", approve:"/api/admin/approve", reject:"/api/admin/reject", label:"Admin approvals (HOD requests)" };
+      if(r==="HR") return { list:"/api/hr/pending", approve:"/api/hr/approve", reject:"/api/hr/reject", label:"HR final approvals (Admin requests)" };
+      return null;
+    }
+
+    async function loadApprovals(){
+      const role=getUser()?.role||"";
+      const cfg=roleEndpoint(role);
+      const body=document.getElementById("body");
+      const hint=document.getElementById("hint");
+      if(!cfg){
+        hint.textContent="No approvals for this role.";
+        body.innerHTML=`<tr><td colspan="7" class="small-muted">Nothing to approve.</td></tr>`;
+        return;
+      }
+      hint.textContent=cfg.label;
+      body.innerHTML=`<tr><td colspan="7" class="small-muted">Loading…</td></tr>`;
+      try{
+        const res=await apiFetch(cfg.list);
+        const rows=res?.rows||res||[];
+        if(!rows.length){
+          body.innerHTML=`<tr><td colspan="7" class="small-muted">No pending requests.</td></tr>`;
+          return;
+        }
+        body.innerHTML="";
+        rows.forEach(r=>{
+          body.insertAdjacentHTML("beforeend",`
+            <tr>
+              <td>${escapeHtml(r.id)}</td>
+              <td>${escapeHtml(r.full_name||r.employee_name||r.emp_no||"—")}</td>
+              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
+              <td>${escapeHtml(String(r.planned_out||r.out_time||"").slice(0,5))}</td>
+              <td>${escapeHtml(String(r.planned_in||r.in_time||"").slice(0,5))}</td>
+              <td>${statusBadge(r.status)}</td>
+              <td class="text-end">
+                <button class="btn btn-primary btn-sm me-2" data-approve="${escapeHtml(r.id)}">Approve</button>
+                <button class="btn btn-outline-danger btn-sm" data-reject="${escapeHtml(r.id)}">Reject</button>
+              </td>
+            </tr>
+          `);
+        });
+
+        body.querySelectorAll("[data-approve]").forEach(b=>b.addEventListener("click", async ()=>{
+          const id=b.getAttribute("data-approve");
+          b.disabled=true;
+          try{
+            await apiFetch(`${cfg.approve}/${id}`, { method:"POST" });
+            showToast("Approved","success");
+            loadApprovals();
+          }catch(e){ showToast(e.message,"danger"); }
+          finally{ b.disabled=false; }
+        }));
+
+        body.querySelectorAll("[data-reject]").forEach(b=>b.addEventListener("click", async ()=>{
+          const id=b.getAttribute("data-reject");
+          const reason=prompt("Reject reason:");
+          if(!reason) return;
+          b.disabled=true;
+          try{
+            await apiFetch(`${cfg.reject}/${id}`, { method:"POST", body: JSON.stringify({ reason }) });
+            showToast("Rejected","warning");
+            loadApprovals();
+          }catch(e){ showToast(e.message,"danger"); }
+          finally{ b.disabled=false; }
+        }));
+
+      }catch(err){
+        body.innerHTML=`<tr><td colspan="7" class="text-danger small">${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    document.getElementById("btnReload").addEventListener("click", loadApprovals);
+    loadApprovals();
+  </script>
+</body>
+</html>

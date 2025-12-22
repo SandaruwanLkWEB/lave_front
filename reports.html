@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports - DSI Leave System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/theme.css" rel="stylesheet">
+</head>
+<body>
+  <div id="appTopbar"></div>
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+
+  <div class="container-xl py-4">
+    <div class="card p-3 p-md-4">
+      <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+        <div>
+          <h3 class="fw-bold mb-1">Reports</h3>
+          <div class="small-muted">Daily / Monthly / Yearly (HR / ADMIN).</div>
+        </div>
+        <button class="btn btn-outline-primary" id="btnRun">Run</button>
+      </div>
+    </div>
+
+    <div class="card p-3 p-md-4 section-gap">
+      <div class="row g-3">
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-bold">Type</label>
+          <select class="form-select" id="type">
+            <option value="daily">Daily</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3" id="dailyBox">
+          <label class="form-label fw-bold">Date</label>
+          <input class="form-control" type="date" id="date">
+        </div>
+
+        <div class="col-6 col-md-2" id="monthBox">
+          <label class="form-label fw-bold">Month</label>
+          <input class="form-control" type="number" min="1" max="12" id="month">
+        </div>
+
+        <div class="col-6 col-md-2" id="yearBox">
+          <label class="form-label fw-bold">Year</label>
+          <input class="form-control" type="number" min="2020" max="2100" id="year">
+        </div>
+
+        <div class="col-12 col-md-4 d-flex align-items-end">
+          <div class="small-muted" id="meta">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 p-md-4 section-gap">
+      <div class="fw-bold mb-2" id="title">Results</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead id="thead"></thead>
+          <tbody id="tbody"><tr><td class="small-muted">Run report to load data.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/layout.js"></script>
+
+  <script>
+    requireAuth();
+    renderTopbar("reports.html");
+
+    function ensureRole(){
+      const r=String(getUser()?.role||"").toUpperCase();
+      if(!(r==="HR" || r==="ADMIN")){
+        showToast("Access denied (HR/ADMIN only)","danger");
+        setTimeout(()=>location.href=roleHome(r), 400);
+        return false;
+      }
+      return true;
+    }
+
+    function setBoxes(){
+      const t=document.getElementById("type").value;
+      document.getElementById("dailyBox").style.display = (t==="daily") ? "" : "none";
+      document.getElementById("monthBox").style.display = (t==="monthly") ? "" : "none";
+      document.getElementById("yearBox").style.display = (t==="monthly" || t==="yearly") ? "" : "none";
+    }
+
+    function th(html){ document.getElementById("thead").innerHTML = html; }
+    function tb(html){ document.getElementById("tbody").innerHTML = html; }
+
+    async function run(){
+      if(!ensureRole()) return;
+      const t=document.getElementById("type").value;
+      const meta=document.getElementById("meta");
+      meta.textContent="Loading…";
+      tb(`<tr><td class="small-muted">Loading…</td></tr>`);
+      try{
+        if(t==="daily"){
+          const date=document.getElementById("date").value;
+          const q=date ? `?date=${encodeURIComponent(date)}` : "";
+          const res=await apiFetch("/api/reports/daily"+q);
+          document.getElementById("title").textContent = `Daily Report ${res.date ? "(" + res.date + ")" : ""}`;
+          meta.textContent = `${(res.rows||[]).length} records`;
+          th(`<tr><th>ID</th><th>Emp No</th><th>Name</th><th>Dept</th><th>Date</th><th>Planned</th><th>Status</th></tr>`);
+          const rows=res.rows||[];
+          if(!rows.length){ tb(`<tr><td colspan="7" class="small-muted">No records</td></tr>`); return; }
+          tb(rows.map(r=>{
+            const planned = `${String(r.planned_out||"").slice(0,5)}-${String(r.planned_in||"").slice(0,5)}`;
+            return `<tr>
+              <td>#${escapeHtml(r.id)}</td>
+              <td>${escapeHtml(r.emp_no||"—")}</td>
+              <td>${escapeHtml(r.full_name||"—")}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td>
+              <td>${escapeHtml(r.department_name||"—")}</td>
+              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
+              <td>${escapeHtml(planned)}</td>
+              <td>${escapeHtml(r.status||"—")}</td>
+            </tr>`;
+          }).join(""));
+        }else if(t==="monthly"){
+          const year=Number(document.getElementById("year").value);
+          const month=Number(document.getElementById("month").value);
+          const res=await apiFetch(`/api/reports/monthly?year=${year}&month=${month}`);
+          document.getElementById("title").textContent = `Monthly Report (${res.year}-${String(res.month).padStart(2,'0')})`;
+          th(`<tr><th colspan="4">Top Employees</th></tr>
+              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`);
+          const emp=res.by_employee||[];
+          const dept=res.by_department||[];
+          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
+          let html = "";
+          if(!emp.length) html += `<tr><td colspan="4" class="small-muted">No employee data</td></tr>`;
+          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
+          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="4">By Department</th></tr>`;
+          html += `<tr><th>Dept</th><th></th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`;
+          if(!dept.length) html += `<tr><td colspan="4" class="small-muted">No department data</td></tr>`;
+          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
+          tb(html);
+        }else{
+          const year=Number(document.getElementById("year").value);
+          const res=await apiFetch(`/api/reports/yearly?year=${year}`);
+          document.getElementById("title").textContent = `Yearly Report (${res.year})`;
+          const emp=res.by_employee||[];
+          const dept=res.by_department||[];
+          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
+          th(`<tr><th colspan="4">Top Employees</th></tr>
+              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`);
+          let html="";
+          if(!emp.length) html += `<tr><td colspan="4" class="small-muted">No employee data</td></tr>`;
+          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
+          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="4">By Department</th></tr>`;
+          html += `<tr><th>Dept</th><th></th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`;
+          if(!dept.length) html += `<tr><td colspan="4" class="small-muted">No department data</td></tr>`;
+          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
+          tb(html);
+        }
+      }catch(e){
+        meta.textContent="—";
+        tb(`<tr><td class="text-danger small">${escapeHtml(e.message)}</td></tr>`);
+      }
+    }
+
+    const now=new Date();
+    document.getElementById("date").valueAsDate=now;
+    document.getElementById("year").value=now.getFullYear();
+    document.getElementById("month").value=now.getMonth()+1;
+
+    document.getElementById("type").addEventListener("change", ()=>{ setBoxes(); });
+    document.getElementById("btnRun").addEventListener("click", run);
+    setBoxes();
+  </script>
+</body>
+</html>
