@@ -1,4 +1,4 @@
-const BASE_URL = "https://sandaruwandsi-production.up.railway.app"; // change if needed
+const BASE_URL = "https://lavebackend-production.up.railway.app"; // change if needed
 
 function getToken(){ return localStorage.getItem("token") || ""; }
 function getUser(){ try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } }
