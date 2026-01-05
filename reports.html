@@ -15,41 +15,132 @@
     <div class="card p-3 p-md-4">
       <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
         <div>
-          <h3 class="fw-bold mb-1">Reports</h3>
-          <div class="small-muted">Daily / Monthly / Yearly (HR / ADMIN).</div>
+          <h3 class="fw-bold mb-1" id="lblTitle">Reports</h3>
+          <div class="small-muted" id="lblSub">Daily / Monthly / Yearly (HR / ADMIN).</div>
         </div>
-        <button class="btn btn-outline-primary" id="btnRun">Run</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" id="btnDownload">CSV Download</button>
+          <button class="btn btn-outline-primary" id="btnDownloadXlsx">XLSX Download</button>
+          <button class="btn btn-primary" id="btnRun">Run</button>
+        </div>
       </div>
     </div>
 
     <div class="card p-3 p-md-4 section-gap">
       <div class="row g-3">
         <div class="col-12 col-md-3">
-          <label class="form-label fw-bold">Type</label>
+          <label class="form-label fw-bold" id="lblType">Type</label>
           <select class="form-select" id="type">
             <option value="daily">Daily</option>
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
+            <option value="trends">Trends</option>
+            <option value="insights">Top Leave Employees</option>
+            <option value="top_departments">Top Leave Departments</option>
+            <option value="variance">Planned vs Actual (Variance)</option>
+            <option value="exceptions">Security Missing IN/OUT</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3" id="periodBox" style="display:none;">
+          <label class="form-label fw-bold">Period</label>
+          <select class="form-select" id="period">
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3" id="groupBox" style="display:none;">
+          <label class="form-label fw-bold">Group by</label>
+          <select class="form-select" id="group">
+            <option value="day">Day</option>
+            <option value="employee">Employee</option>
+            <option value="department">Department</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3" id="kindBox" style="display:none;">
+          <label class="form-label fw-bold">Exception</label>
+          <select class="form-select" id="kind">
+            <option value="missing_any">Missing IN or OUT</option>
+            <option value="missing_out">Missing OUT</option>
+            <option value="missing_in">Missing IN</option>
           </select>
         </div>
 
         <div class="col-12 col-md-3" id="dailyBox">
-          <label class="form-label fw-bold">Date</label>
+          <label class="form-label fw-bold" id="lblDate">Date</label>
           <input class="form-control" type="date" id="date">
         </div>
 
         <div class="col-6 col-md-2" id="monthBox">
-          <label class="form-label fw-bold">Month</label>
+          <label class="form-label fw-bold" id="lblMonth">Month</label>
           <input class="form-control" type="number" min="1" max="12" id="month">
         </div>
 
         <div class="col-6 col-md-2" id="yearBox">
-          <label class="form-label fw-bold">Year</label>
+          <label class="form-label fw-bold" id="lblYear">Year</label>
           <input class="form-control" type="number" min="2020" max="2100" id="year">
         </div>
 
-        <div class="col-12 col-md-4 d-flex align-items-end">
-          <div class="small-muted" id="meta">—</div>
+        <div class="col-12 col-md-2" id="trendFromBox" style="display:none;">
+          <label class="form-label fw-bold">From</label>
+          <input class="form-control" type="date" id="from">
+        </div>
+
+        <div class="col-12 col-md-2" id="trendToBox" style="display:none;">
+          <label class="form-label fw-bold">To</label>
+          <input class="form-control" type="date" id="to">
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-bold" id="lblDept">Department</label>
+          <select class="form-select" id="department_id">
+            <option value="">All</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-bold" id="lblEmp">Emp No / Name</label>
+          <input class="form-control" type="text" id="emp_no" placeholder="E001 / Name">
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-bold" id="lblStatus">Status</label>
+          <select class="form-select" id="status">
+            <option value="">All</option>
+            <option value="PENDING_HOD">PENDING_HOD</option>
+            <option value="PENDING_ADMIN">PENDING_ADMIN</option>
+            <option value="PENDING_HR">PENDING_HR</option>
+            <option value="FINAL_APPROVED">FINAL_APPROVED</option>
+            <option value="FINAL_REJECTED">FINAL_REJECTED</option>
+            <option value="REJECTED_HOD">REJECTED_HOD</option>
+            <option value="REJECTED_ADMIN">REJECTED_ADMIN</option>
+            <option value="APPEAL_PENDING_HR">APPEAL_PENDING_HR</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-3 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="unregistered">
+            <label class="form-check-label fw-bold" for="unregistered" id="lblUnreg">Unregistered only</label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+            <div class="small-muted" id="meta">—</div>
+            <div class="d-flex gap-2" id="pager" style="display:none;">
+              <select class="form-select" id="limit" style="max-width:140px;">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200" selected>200</option>
+              </select>
+              <button class="btn btn-outline-primary" id="btnPrev">Prev</button>
+              <button class="btn btn-outline-primary" id="btnNext">Next</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -66,12 +157,29 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/layout.js"></script>
 
   <script>
     requireAuth();
     renderTopbar("reports.html");
+
+    // i18n labels
+    document.getElementById('lblTitle').textContent = t('reports.title') || 'Reports';
+    document.getElementById('lblSub').textContent = t('reports.subtitle') || 'Daily / Monthly / Yearly (HR / ADMIN).';
+    document.getElementById('lblType').textContent = t('reports.type') || 'Type';
+    document.getElementById('lblDate').textContent = t('reports.date') || 'Date';
+    document.getElementById('lblMonth').textContent = t('reports.month') || 'Month';
+    document.getElementById('lblYear').textContent = t('reports.year') || 'Year';
+    document.getElementById('lblDept').textContent = t('reports.department') || 'Department';
+    document.getElementById('lblEmp').textContent = t('reports.employee') || 'Emp No / Name';
+    document.getElementById('lblStatus').textContent = t('reports.status') || 'Status';
+    document.getElementById('lblUnreg').textContent = t('reports.unregistered') || 'Unregistered only';
+    document.getElementById('btnRun').textContent = t('common.run') || 'Run';
+    document.getElementById('btnDownload').textContent = t('common.download_csv') || 'CSV Download';
+    document.getElementById('btnDownloadXlsx').textContent = t('common.download_xlsx') || 'XLSX Download';
 
     function ensureRole(){
       const r=String(getUser()?.role||"").toUpperCase();
@@ -88,29 +196,180 @@
       document.getElementById("dailyBox").style.display = (t==="daily") ? "" : "none";
       document.getElementById("monthBox").style.display = (t==="monthly") ? "" : "none";
       document.getElementById("yearBox").style.display = (t==="monthly" || t==="yearly") ? "" : "none";
+      const needsRange = (t==="trends" || t==="variance" || t==="exceptions");
+      document.getElementById("trendFromBox").style.display = needsRange ? "" : "none";
+      document.getElementById("trendToBox").style.display = needsRange ? "" : "none";
+      document.getElementById("periodBox").style.display = (t==="insights" || t==="top_departments") ? "" : "none";
+      document.getElementById("groupBox").style.display = (t==="variance") ? "" : "none";
+      document.getElementById("kindBox").style.display = (t==="exceptions") ? "" : "none";
+      document.getElementById("pager").style.display = (t==="daily") ? "" : "none";
     }
 
     function th(html){ document.getElementById("thead").innerHTML = html; }
     function tb(html){ document.getElementById("tbody").innerHTML = html; }
 
+    function buildQuery(extra={}){
+      const params = new URLSearchParams();
+      const dep = document.getElementById('department_id').value;
+      const emp = document.getElementById('emp_no').value.trim();
+      const status = document.getElementById('status').value;
+      const unreg = document.getElementById('unregistered').checked;
+      if (dep) params.set('department_id', dep);
+      if (emp) params.set('emp_no', emp);
+      if (status) params.set('status', status);
+      if (unreg) params.set('unregistered', '1');
+      Object.entries(extra).forEach(([k,v])=>{ if (v !== undefined && v !== null && v !== '') params.set(k, v); });
+      const q = params.toString();
+      return q ? ('?' + q) : '';
+    }
+
+    function statusPill(status){
+      const cls = statusBadgeClass(status);
+      return `<span class="badge ${cls}">${escapeHtml(formatStatus(status))}</span>`;
+    }
+
+    let currentOffset = 0;
+
     async function run(){
       if(!ensureRole()) return;
-      const t=document.getElementById("type").value;
+      const ttype=document.getElementById("type").value;
       const meta=document.getElementById("meta");
-      meta.textContent="Loading…";
-      tb(`<tr><td class="small-muted">Loading…</td></tr>`);
+      meta.textContent = t('common.loading') || 'Loading…';
+      tb(`<tr><td class="small-muted">${escapeHtml(t('common.loading')||'Loading…')}</td></tr>`);
+
       try{
-        if(t==="daily"){
+        if(ttype==="daily"){
           const date=document.getElementById("date").value;
-          const q=date ? `?date=${encodeURIComponent(date)}` : "";
+          const limit=document.getElementById('limit').value;
+          const q = buildQuery({ date, limit, offset: currentOffset });
           const res=await apiFetch("/api/reports/daily"+q);
-          document.getElementById("title").textContent = `Daily Report ${res.date ? "(" + res.date + ")" : ""}`;
-          meta.textContent = `${(res.rows||[]).length} records`;
-          th(`<tr><th>ID</th><th>Emp No</th><th>Name</th><th>Dept</th><th>Date</th><th>Planned</th><th>Status</th></tr>`);
+          document.getElementById("title").textContent = `Daily Report ${res.date ? '('+res.date+')' : ''}`;
+          const total = res.pagination?.total || 0;
+          const shown = (res.rows||[]).length;
+          meta.textContent = `${shown} / ${total} records`;
+
+          th(`<tr><th>ID</th><th>Emp No</th><th>Name</th><th>Dept</th><th>Date</th><th>Planned</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th><th>Status</th></tr>`);
           const rows=res.rows||[];
-          if(!rows.length){ tb(`<tr><td colspan="7" class="small-muted">No records</td></tr>`); return; }
+          if(!rows.length){ tb(`<tr><td colspan="9" class="small-muted">No records</td></tr>`); return; }
           tb(rows.map(r=>{
             const planned = `${String(r.planned_out||"").slice(0,5)}-${String(r.planned_in||"").slice(0,5)}`;
+            const actual = (r.actual_out && r.actual_in) ? `${String(r.actual_out).slice(0,5)}-${String(r.actual_in).slice(0,5)}` : '—';
+            return `<tr>
+              <td>#${escapeHtml(r.id)}</td>
+              <td>${escapeHtml(r.emp_no||"—")}</td>
+              <td>${escapeHtml(r.full_name||"—")}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td>
+              <td>${escapeHtml(r.department_name||"—")}</td>
+              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
+              <td>${escapeHtml(planned)}<div class="small-muted">${escapeHtml(actual)}</div></td>
+              <td class="text-end">${escapeHtml(Math.round(Number(r.planned_minutes||0)))}</td>
+              <td class="text-end">${r.actual_minutes==null ? '—' : escapeHtml(Math.round(Number(r.actual_minutes||0)))}</td>
+              <td>${statusPill(r.status||"—")}</td>
+            </tr>`;
+          }).join(""));
+
+        } else if(ttype==="monthly"){
+          const year=Number(document.getElementById("year").value);
+          const month=Number(document.getElementById("month").value);
+          const q = buildQuery({ year, month });
+          const res=await apiFetch(`/api/reports/monthly${q}`);
+          document.getElementById("title").textContent = `Monthly Report (${res.year}-${String(res.month).padStart(2,'0')})`;
+          const emp=res.by_employee||[];
+          const dept=res.by_department||[];
+          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
+          th(`<tr><th colspan="5">Top Employees</th></tr>
+              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`);
+          let html = "";
+          if(!emp.length) html += `<tr><td colspan="5" class="small-muted">No employee data</td></tr>`;
+          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="5">By Department</th></tr>`;
+          html += `<tr><th colspan="2">Dept</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`;
+          if(!dept.length) html += `<tr><td colspan="5" class="small-muted">No department data</td></tr>`;
+          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          tb(html);
+
+        } else if(ttype==="yearly"){
+          const year=Number(document.getElementById("year").value);
+          const q = buildQuery({ year });
+          const res=await apiFetch(`/api/reports/yearly${q}`);
+          document.getElementById("title").textContent = `Yearly Report (${res.year})`;
+          const emp=res.by_employee||[];
+          const dept=res.by_department||[];
+          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
+          th(`<tr><th colspan="5">Top Employees</th></tr>
+              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`);
+          let html="";
+          if(!emp.length) html += `<tr><td colspan="5" class="small-muted">No employee data</td></tr>`;
+          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="5">By Department</th></tr>`;
+          html += `<tr><th colspan="2">Dept</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`;
+          if(!dept.length) html += `<tr><td colspan="5" class="small-muted">No department data</td></tr>`;
+          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          tb(html);
+
+        } else if(ttype==="insights"){
+          const period=document.getElementById('period').value;
+          const res=await apiFetch(`/api/reports/insights?period=${encodeURIComponent(period)}`);
+          document.getElementById("title").textContent = `Top Leave Employees (${res.period})`;
+          const a=res.top_by_minutes||[];
+          const b=res.top_by_requests||[];
+          meta.textContent = `Top lists: ${a.length} + ${b.length}`;
+          th(`<tr><th colspan="5">Top by Minutes</th></tr>
+              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`);
+          let html='';
+          html += a.length ? a.map(r=>`<tr><td>${escapeHtml(r.emp_no||'—')}</td><td>${escapeHtml(r.full_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="5" class="small-muted">No data</td></tr>`;
+          html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="5">Top by Requests</th></tr>`;
+          html += `<tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`;
+          html += b.length ? b.map(r=>`<tr><td>${escapeHtml(r.emp_no||'—')}</td><td>${escapeHtml(r.full_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="5" class="small-muted">No data</td></tr>`;
+          tb(html);
+
+        } else if(ttype==="top_departments"){
+          const period=document.getElementById('period').value;
+          const res=await apiFetch(`/api/reports/top-departments?period=${encodeURIComponent(period)}`);
+          document.getElementById("title").textContent = `Top Leave Departments (${res.period})`;
+          const a=res.top_by_minutes||[];
+          const b=res.top_by_requests||[];
+          meta.textContent = `Top lists: ${a.length} + ${b.length}`;
+          th(`<tr><th colspan="4">Top by Minutes</th></tr>
+              <tr><th>Department</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`);
+          let html='';
+          html += a.length ? a.map(r=>`<tr><td>${escapeHtml(r.department_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="4" class="small-muted">No data</td></tr>`;
+          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
+          html += `<tr><th colspan="4">Top by Requests</th></tr>`;
+          html += `<tr><th>Department</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`;
+          html += b.length ? b.map(r=>`<tr><td>${escapeHtml(r.department_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="4" class="small-muted">No data</td></tr>`;
+          tb(html);
+
+        } else if(ttype==="variance"){
+          const from=document.getElementById('from').value;
+          const to=document.getElementById('to').value;
+          const group=document.getElementById('group').value;
+          const q = buildQuery({ from, to, group });
+          const res=await apiFetch(`/api/reports/variance${q}`);
+          document.getElementById("title").textContent = `Variance (${res.from} → ${res.to}) • group: ${res.group}`;
+          const rows=res.rows||[];
+          meta.textContent = `${rows.length} rows`;
+          const key = (res.group==='employee') ? 'emp_no' : (res.group==='department') ? 'department_name' : 'bucket';
+          th(`<tr><th>${escapeHtml(key)}</th><th class="text-end">Requests</th><th class="text-end">Planned</th><th class="text-end">Actual</th><th class="text-end">Variance</th><th class="text-end">Missing Actual</th></tr>`);
+          if(!rows.length){ tb(`<tr><td colspan="6" class="small-muted">No data</td></tr>`); return; }
+          tb(rows.map(r=>`<tr><td>${escapeHtml(String(r[key]||'').slice(0,10) || '—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td><td class="text-end">${escapeHtml(r.variance_minutes)}</td><td class="text-end">${escapeHtml(r.missing_actual_count)}</td></tr>`).join(''));
+
+        } else if(ttype==="exceptions"){
+          const from=document.getElementById('from').value;
+          const to=document.getElementById('to').value;
+          const kind=document.getElementById('kind').value;
+          const q = buildQuery({ from, to, kind });
+          const res=await apiFetch(`/api/reports/exceptions${q}`);
+          document.getElementById("title").textContent = `Security Exceptions (${res.from} → ${res.to}) • ${res.kind}`;
+          const rows=res.rows||[];
+          meta.textContent = `${rows.length} rows`;
+          th(`<tr><th>ID</th><th>Emp No</th><th>Name</th><th>Dept</th><th>Date</th><th>Planned</th><th>Actual</th><th>Status</th></tr>`);
+          if(!rows.length){ tb(`<tr><td colspan="8" class="small-muted">No data</td></tr>`); return; }
+          tb(rows.map(r=>{
+            const planned = `${String(r.planned_out||"").slice(0,5)}-${String(r.planned_in||"").slice(0,5)}`;
+            const actual = (r.actual_out && r.actual_in) ? `${String(r.actual_out).slice(0,5)}-${String(r.actual_in).slice(0,5)}` : '—';
             return `<tr>
               <td>#${escapeHtml(r.id)}</td>
               <td>${escapeHtml(r.emp_no||"—")}</td>
@@ -118,46 +377,23 @@
               <td>${escapeHtml(r.department_name||"—")}</td>
               <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
               <td>${escapeHtml(planned)}</td>
-              <td>${escapeHtml(r.status||"—")}</td>
+              <td>${escapeHtml(actual)}</td>
+              <td><span class="badge bg-success">FINAL_APPROVED</span></td>
             </tr>`;
           }).join(""));
-        }else if(t==="monthly"){
-          const year=Number(document.getElementById("year").value);
-          const month=Number(document.getElementById("month").value);
-          const res=await apiFetch(`/api/reports/monthly?year=${year}&month=${month}`);
-          document.getElementById("title").textContent = `Monthly Report (${res.year}-${String(res.month).padStart(2,'0')})`;
-          th(`<tr><th colspan="4">Top Employees</th></tr>
-              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`);
-          const emp=res.by_employee||[];
-          const dept=res.by_department||[];
-          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
-          let html = "";
-          if(!emp.length) html += `<tr><td colspan="4" class="small-muted">No employee data</td></tr>`;
-          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
-          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
-          html += `<tr><th colspan="4">By Department</th></tr>`;
-          html += `<tr><th>Dept</th><th></th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`;
-          if(!dept.length) html += `<tr><td colspan="4" class="small-muted">No department data</td></tr>`;
-          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
-          tb(html);
-        }else{
-          const year=Number(document.getElementById("year").value);
-          const res=await apiFetch(`/api/reports/yearly?year=${year}`);
-          document.getElementById("title").textContent = `Yearly Report (${res.year})`;
-          const emp=res.by_employee||[];
-          const dept=res.by_department||[];
-          meta.textContent = `Employees: ${emp.length} | Departments: ${dept.length}`;
-          th(`<tr><th colspan="4">Top Employees</th></tr>
-              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`);
-          let html="";
-          if(!emp.length) html += `<tr><td colspan="4" class="small-muted">No employee data</td></tr>`;
-          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
-          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
-          html += `<tr><th colspan="4">By Department</th></tr>`;
-          html += `<tr><th>Dept</th><th></th><th class="text-end">Requests</th><th class="text-end">Planned Minutes</th></tr>`;
-          if(!dept.length) html += `<tr><td colspan="4" class="small-muted">No department data</td></tr>`;
-          else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td></tr>`).join("");
-          tb(html);
+
+        } else if(ttype==="trends"){
+          const from=document.getElementById('from').value;
+          const to=document.getElementById('to').value;
+          const q = buildQuery({ from, to, group:'day' });
+          const res=await apiFetch(`/api/reports/trends${q}`);
+          document.getElementById("title").textContent = `Trends (${res.from} → ${res.to})`;
+          meta.textContent = `${(res.rows||[]).length} buckets`;
+          th(`<tr><th>Date</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`);
+          const rows=res.rows||[];
+          if(!rows.length){ tb(`<tr><td colspan="4" class="small-muted">No data</td></tr>`); return; }
+          tb(rows.map(r=>`<tr><td>${escapeHtml(String(r.bucket).slice(0,10))}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join(''));
+
         }
       }catch(e){
         meta.textContent="—";
@@ -165,14 +401,111 @@
       }
     }
 
+    async function downloadCSV(){
+      if(!ensureRole()) return;
+      const type=document.getElementById("type").value;
+      if(!['daily','insights','top_departments'].includes(type)){
+        showToast('CSV export supports Daily / Top Employees / Top Departments only. Use XLSX.','warning');
+        return;
+      }
+      const extra={ format:'csv', type };
+      if(type==='daily') extra.date=document.getElementById('date').value;
+      if(type==='insights' || type==='top_departments') extra.period=document.getElementById('period').value;
+
+      const q = buildQuery(extra);
+      try{
+        const token = getToken();
+        const res = await fetch(`${BASE_URL}/api/reports/export${q}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_${type}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Downloaded','success');
+      }catch(e){
+        showToast(e.message,'danger');
+      }
+    }
+
+    async function downloadXLSX(){
+      if(!ensureRole()) return;
+      const type=document.getElementById("type").value;
+      const extra={ format:'xlsx', type };
+      if(type==='daily') extra.date=document.getElementById('date').value;
+      if(type==='monthly'){ extra.year=document.getElementById('year').value; extra.month=document.getElementById('month').value; }
+      if(type==='yearly'){ extra.year=document.getElementById('year').value; }
+      if(type==='trends'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.group='day'; }
+      if(type==='insights' || type==='top_departments'){ extra.period=document.getElementById('period').value; }
+      if(type==='variance'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.group=document.getElementById('group').value; }
+      if(type==='exceptions'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.kind=document.getElementById('kind').value; }
+
+      const q = buildQuery(extra);
+      try{
+        const token = getToken();
+        const res = await fetch(`${BASE_URL}/api/reports/export${q}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || `HTTP ${res.status}`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report_${type}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Downloaded','success');
+      }catch(e){
+        showToast(e.message,'danger');
+      }
+    }
+
+async function loadDepartments(){
+      try{
+        const res = await apiFetch('/api/public/departments');
+        const sel = document.getElementById('department_id');
+        (res.rows||[]).forEach(d=>{
+          const opt = document.createElement('option');
+          opt.value = d.id;
+          opt.textContent = d.name;
+          sel.appendChild(opt);
+        });
+      }catch(e){ /* ignore */ }
+    }
+
     const now=new Date();
     document.getElementById("date").valueAsDate=now;
     document.getElementById("year").value=now.getFullYear();
     document.getElementById("month").value=now.getMonth()+1;
+    // default trends range: last 7 days
+    const from = new Date(now); from.setDate(from.getDate()-7);
+    document.getElementById('from').valueAsDate = from;
+    document.getElementById('to').valueAsDate = now;
 
-    document.getElementById("type").addEventListener("change", ()=>{ setBoxes(); });
+    document.getElementById("type").addEventListener("change", ()=>{ currentOffset=0; setBoxes(); });
     document.getElementById("btnRun").addEventListener("click", run);
+    document.getElementById("btnDownload").addEventListener("click", downloadCSV);
+    document.getElementById("btnDownloadXlsx").addEventListener("click", downloadXLSX);
+    document.getElementById('btnPrev').addEventListener('click', ()=>{ currentOffset=Math.max(0, currentOffset - Number(document.getElementById('limit').value)); run(); });
+    document.getElementById('btnNext').addEventListener('click', ()=>{ currentOffset=currentOffset + Number(document.getElementById('limit').value); run(); });
+    document.getElementById('limit').addEventListener('change', ()=>{ currentOffset=0; run(); });
+
     setBoxes();
+    loadDepartments();
   </script>
 </body>
 </html>

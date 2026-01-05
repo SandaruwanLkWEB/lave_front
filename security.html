@@ -12,44 +12,69 @@
   <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
 
   <div class="container-xl py-4">
-    <div class="card p-3 p-md-4">
-      <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
-        <div>
-          <h3 class="fw-bold mb-1">Security OUT/IN</h3>
-          <div class="small-muted">Approved leaves ready for OUT/IN marking.</div>
-        </div>
-        <button class="btn btn-outline-primary" id="btnReload">Reload</button>
-      </div>
+    <div class="card p-3 p-md-4 mb-3">
+      <h3 class="fw-bold mb-1">Security OUT/IN</h3>
+      <div class="small-muted">Enter a 6-digit leave code to view details and mark OUT/IN.</div>
     </div>
 
-    <div class="card p-3 p-md-4 section-gap">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>Leave ID</th>
-              <th>Emp No</th>
-              <th>Name</th>
-              <th>Date</th>
-              <th>Planned</th>
-              <th>Actual OUT</th>
-              <th>Actual IN</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="body"><tr><td colspan="8" class="small-muted">Loading…</td></tr></tbody>
-        </table>
+    <div class="card p-3 p-md-4">
+      <div class="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-end justify-content-between">
+        <div class="flex-grow-1">
+          <div class="fw-bold mb-1">Leave Code Lookup</div>
+          <div class="small-muted">Enter the 6-digit code and mark OUT/IN.</div>
+          <div class="d-flex gap-2 mt-2">
+            <input class="form-control" id="codeInput" inputmode="numeric" maxlength="6" placeholder="e.g. 042381" style="max-width: 220px;">
+            <button class="btn btn-primary" id="btnLookup">Lookup</button>
+          </div>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-outline-secondary" id="btnClearLookup">Clear</button>
+        </div>
+      </div>
+
+      <div class="border rounded-3 p-3 mt-3 d-none" id="lookupResult">
+        <div class="alert d-none" id="actionMsg" role="alert"></div>
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+          <div>
+            <div class="small-muted">Leave</div>
+            <div class="fw-bold">
+              <span id="lrName">-</span>
+              <span class="text-secondary" id="lrEmp"> </span>
+            </div>
+            <div class="small text-secondary">
+              <span id="lrDept">-</span> • <span id="lrDate">-</span> • Planned <span id="lrPlanned">-</span>
+            </div>
+            <div class="small mt-1">Code: <span class="badge text-bg-light border" id="lrCode">000000</span></div>
+          </div>
+          <div class="text-end">
+            <div class="small-muted">Actual</div>
+            <div class="small">
+              OUT: <span id="lrOut">-</span> • IN: <span id="lrIn">-</span>
+            </div>
+            <div class="mt-2 d-flex justify-content-end gap-2">
+              <button class="btn btn-warning" id="btnMarkOut">Mark OUT</button>
+              <button class="btn btn-success" id="btnMarkIn">Mark IN</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/layout.js"></script>
 
   <script>
     requireAuth();
     renderTopbar("security.html");
+
+    // Keep the latest action message so it doesn't disappear when we refresh data.
+    // Previously, we showed the message and immediately called loadLookup(),
+    // and loadLookup() cleared the message at its start.
+    let lastActionMsg = null;
 
     function ensureSecurity(){
       const role=String(getUser()?.role||"").toUpperCase();
@@ -61,55 +86,120 @@
       return true;
     }
 
-    async function loadPending(){
+    function normalizeCode(v){
+      return String(v||'').trim().replace(/\s+/g,'').slice(0,6);
+    }
+
+    function clearActionMsg(){
+      const el = document.getElementById('actionMsg');
+      if(!el) return;
+      el.className = 'alert d-none';
+      el.textContent = '';
+      lastActionMsg = null;
+    }
+
+    function setActionMsg(message, type='info'){
+      const el = document.getElementById('actionMsg');
+      if(!el) return;
+      const cls = type === 'success' ? 'alert-success' :
+                  type === 'danger' ? 'alert-danger' :
+                  type === 'warning' ? 'alert-warning' : 'alert-primary';
+      el.className = `alert ${cls}`;
+      el.textContent = message;
+      lastActionMsg = { message, type };
+    }
+
+    function setButtons(r){
+      const btnOut = document.getElementById("btnMarkOut");
+      const btnIn = document.getElementById("btnMarkIn");
+      btnOut.disabled = !r.leave_code || !!r.actual_out;
+      btnIn.disabled = !r.leave_code || !r.actual_out || !!r.actual_in;
+    }
+
+    async function loadLookup(opts={}){
       if(!ensureSecurity()) return;
-      const body=document.getElementById("body");
-      body.innerHTML=`<tr><td colspan="8" class="small-muted">Loading…</td></tr>`;
+      const preserveMsg = !!opts.preserveMsg;
+      if(!preserveMsg) clearActionMsg();
+      const code = normalizeCode(document.getElementById("codeInput").value);
+      if(!/^[0-9]{6}$/.test(code)){
+        showToast("Enter a valid 6-digit code","warning");
+        setActionMsg("Please enter a valid 6-digit code.","warning");
+        return;
+      }
+
       try{
-        const res=await apiFetch("/api/security/pending");
-        const rows=res?.rows||res||[];
-        if(!rows.length){ body.innerHTML=`<tr><td colspan="8" class="small-muted">No pending leaves.</td></tr>`; return; }
-        body.innerHTML="";
-        rows.forEach(r=>{
-          const planned = `${String(r.planned_out||"").slice(0,5)} - ${String(r.planned_in||"").slice(0,5)}`;
-          body.insertAdjacentHTML("beforeend",`
-            <tr>
-              <td class="fw-bold">#${escapeHtml(r.id)}</td>
-              <td>${escapeHtml(r.emp_no||"—")}</td>
-              <td>${escapeHtml(r.full_name||"—")}</td>
-              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
-              <td>${escapeHtml(planned)}</td>
-              <td>${escapeHtml(String(r.actual_out||"").slice(0,5) || "—")}</td>
-              <td>${escapeHtml(String(r.actual_in||"").slice(0,5) || "—")}</td>
-              <td class="text-end">
-                <button class="btn btn-primary btn-sm me-2" data-out="${escapeHtml(r.id)}" ${r.actual_out ? "disabled" : ""}>OUT</button>
-                <button class="btn btn-outline-primary btn-sm" data-in="${escapeHtml(r.id)}" ${!r.actual_out || r.actual_in ? "disabled" : ""}>IN</button>
-              </td>
-            </tr>
-          `);
-        });
+        const resp = await apiFetch(`/api/security/code/${code}`, { method:"GET" });
+        const r = resp.row;
+        const box = document.getElementById("lookupResult");
+        box.classList.remove("d-none");
 
-        body.querySelectorAll("[data-out]").forEach(b=>b.addEventListener("click", async ()=>{
-          const id=b.getAttribute("data-out");
-          b.disabled=true;
-          try{ await apiFetch(`/api/security/${id}/out`, { method:"POST" }); showToast("Marked OUT","success"); loadPending(); }
-          catch(e){ showToast(e.message,"danger"); b.disabled=false; }
-        }));
+        // If we are refreshing after an OUT/IN action, keep the message visible.
+        if(!preserveMsg) clearActionMsg();
 
-        body.querySelectorAll("[data-in]").forEach(b=>b.addEventListener("click", async ()=>{
-          const id=b.getAttribute("data-in");
-          b.disabled=true;
-          try{ await apiFetch(`/api/security/${id}/in`, { method:"POST" }); showToast("Marked IN","success"); loadPending(); }
-          catch(e){ showToast(e.message,"danger"); b.disabled=false; }
-        }));
+        document.getElementById("lrName").textContent = r.is_unregistered ? (r.unregistered_name||'-') : (r.full_name||'-');
+        document.getElementById("lrEmp").textContent = r.is_unregistered ? (r.unregistered_emp_id ? `(${r.unregistered_emp_id})` : "(Unregistered)") : (r.emp_no ? `(${r.emp_no})` : "");
+        document.getElementById("lrDept").textContent = r.department_name || "-";
+        document.getElementById("lrDate").textContent = r.date || "-";
+        document.getElementById("lrPlanned").textContent = `${r.planned_out || '-'} - ${r.planned_in || '-'}`;
+        document.getElementById("lrOut").textContent = r.actual_out || "-";
+        document.getElementById("lrIn").textContent = r.actual_in || "-";
+        document.getElementById("lrCode").textContent = r.leave_code || code;
+
+        setButtons(r);
+
+        const btnOut = document.getElementById("btnMarkOut");
+        const btnIn = document.getElementById("btnMarkIn");
+
+        btnOut.onclick = async ()=>{
+          const currentCode = normalizeCode(document.getElementById("lrCode").textContent);
+          btnOut.disabled = true;
+          try{
+            await apiFetch(`/api/security/code/${currentCode}/out`, { method:"POST" });
+            showToast("Marked OUT","success");
+            setActionMsg("OUT marked successfully.","success");
+            loadLookup({ preserveMsg:true });
+          }catch(e){
+            showToast(e.message,"danger");
+            setActionMsg(e.message || "Failed to mark OUT","danger");
+            btnOut.disabled=false;
+          }
+        };
+
+        btnIn.onclick = async ()=>{
+          const currentCode = normalizeCode(document.getElementById("lrCode").textContent);
+          btnIn.disabled = true;
+          try{
+            await apiFetch(`/api/security/code/${currentCode}/in`, { method:"POST" });
+            showToast("Marked IN","success");
+            setActionMsg("IN marked successfully.","success");
+            loadLookup({ preserveMsg:true });
+          }catch(e){
+            showToast(e.message,"danger");
+            setActionMsg(e.message || "Failed to mark IN","danger");
+            btnIn.disabled=false;
+          }
+        };
+
+        // Re-apply preserved message after refresh render.
+        if(preserveMsg && lastActionMsg){
+          setActionMsg(lastActionMsg.message, lastActionMsg.type);
+        }
 
       }catch(err){
-        body.innerHTML=`<tr><td colspan="8" class="text-danger small">${escapeHtml(err.message)}</td></tr>`;
+        showToast(err.message,"danger");
+        setActionMsg(err.message || "Lookup failed","danger");
       }
     }
 
-    document.getElementById("btnReload").addEventListener("click", loadPending);
-    loadPending();
+    function clearLookup(){
+      document.getElementById("codeInput").value = "";
+      document.getElementById("lookupResult").classList.add("d-none");
+      clearActionMsg();
+    }
+
+    document.getElementById("btnLookup").addEventListener("click", loadLookup);
+    document.getElementById("btnClearLookup").addEventListener("click", clearLookup);
+    document.getElementById("codeInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); loadLookup(); } });
   </script>
 </body>
 </html>

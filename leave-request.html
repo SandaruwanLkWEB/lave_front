@@ -52,7 +52,34 @@
     </div>
   </div>
 
+
+  <!-- Leave Code Modal -->
+  <div class="modal fade" id="codeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Your Leave Identification Code</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="small-muted mb-2">Give this 6-digit code to the Security desk to mark OUT/IN.</div>
+          <div class="d-flex align-items-center gap-2">
+            <div class="display-6 fw-bold m-0" id="leaveCodeText">000000</div>
+            <button class="btn btn-outline-primary btn-sm" type="button" id="btnCopyCode">Copy</button>
+          </div>
+          <div class="small text-secondary mt-2">Tip: Take a screenshot.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="btnGoMyLeaves">Go to My Requests</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/i18n.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/layout.js"></script>
 
@@ -63,6 +90,23 @@
     document.getElementById("date").valueAsDate = new Date();
     document.getElementById("out_time").value = "09:00";
     document.getElementById("in_time").value = "10:00";
+
+
+    document.getElementById("btnCopyCode")?.addEventListener("click", async ()=>{
+      const code = document.getElementById("leaveCodeText").textContent.trim();
+      try{
+        await navigator.clipboard.writeText(code);
+        showToast("Code copied", "success");
+      }catch{
+        showToast("Copy failed. Please select and copy manually.", "warning");
+      }
+    });
+
+    document.getElementById("codeModal")?.addEventListener("hidden.bs.modal", ()=>{
+      // After user sees the code, go to My Requests
+      location.href = "my-leaves.html";
+    });
+
 
     document.getElementById("leaveForm").addEventListener("submit", async (e)=>{
       e.preventDefault();
@@ -75,9 +119,17 @@
           in_time: document.getElementById("in_time").value,
           note: document.getElementById("note").value.trim() || null
         };
-        await apiFetch("/api/leaves", { method:"POST", body: JSON.stringify(payload) });
-        showToast("Submitted", "success");
-        setTimeout(()=>location.href="my-leaves.html",300);
+        const resp = await apiFetch("/api/leaves", { method:"POST", body: JSON.stringify(payload) });
+        const code = resp && (resp.leave_code || resp.leaveCode || resp.code);
+        if(code){
+          document.getElementById("leaveCodeText").textContent = code;
+          const modalEl = document.getElementById('codeModal');
+          const modal = new bootstrap.Modal(modalEl);
+          modal.show();
+        }else{
+          showToast("Submitted", "success");
+          setTimeout(()=>location.href="my-leaves.html",300);
+        }
       }catch(err){
         showToast(err.message, "danger");
       }finally{

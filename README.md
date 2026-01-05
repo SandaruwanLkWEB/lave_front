@@ -1,7 +1,22 @@
-# DSI Leave System — Final Enterprise UI (HR-only Unregistered)
+# DSI Leave System — Enterprise UI
 
-- Public unregistered portal removed (spam-safe).
-- HR-only menu and page: `hr-unregistered.html`.
+## Configure Backend URL
+This UI is static (HTML/CSS/JS). You can set the API base URL at runtime:
 
-Set backend URL:
-- assets/js/app.js -> BASE_URL
+- Default: `https://lavebackend-production.up.railway.app`
+- Override (recommended):
+  - Open browser console and run:
+    - `localStorage.setItem('BASE_URL','http://localhost:8080');`
+  - Refresh the page.
+
+Config file: `assets/js/config.js`
+
+## Language
+- Default: Sinhala (සිංහල)
+- Toggle: Top bar language switch (සිංහල / English)
+  - Stored in `localStorage` key `lang`.
+
+## Reports (HR / ADMIN)
+- Filters: Department, Employee, Status, Unregistered
+- Daily pagination
+- CSV download (UTF-8 BOM for Sinhala Excel compatibility)
