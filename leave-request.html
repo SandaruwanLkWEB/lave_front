@@ -124,8 +124,18 @@
         if(code){
           document.getElementById("leaveCodeText").textContent = code;
           const modalEl = document.getElementById('codeModal');
-          const modal = new bootstrap.Modal(modalEl);
-          modal.show();
+          try{
+            if(window.bootstrap && bootstrap.Modal){
+              const modal = new bootstrap.Modal(modalEl);
+              modal.show();
+            }else{
+              alert("Leave code: " + code);
+              setTimeout(()=>location.href="my-leaves.html",300);
+            }
+          }catch(e){
+            alert("Leave code: " + code);
+            setTimeout(()=>location.href="my-leaves.html",300);
+          }
         }else{
           showToast("Submitted", "success");
           setTimeout(()=>location.href="my-leaves.html",300);

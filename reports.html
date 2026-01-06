@@ -35,37 +35,6 @@
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
             <option value="trends">Trends</option>
-            <option value="insights">Top Leave Employees</option>
-            <option value="top_departments">Top Leave Departments</option>
-            <option value="variance">Planned vs Actual (Variance)</option>
-            <option value="exceptions">Security Missing IN/OUT</option>
-          </select>
-        </div>
-
-        <div class="col-12 col-md-3" id="periodBox" style="display:none;">
-          <label class="form-label fw-bold">Period</label>
-          <select class="form-select" id="period">
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
-        </div>
-
-        <div class="col-12 col-md-3" id="groupBox" style="display:none;">
-          <label class="form-label fw-bold">Group by</label>
-          <select class="form-select" id="group">
-            <option value="day">Day</option>
-            <option value="employee">Employee</option>
-            <option value="department">Department</option>
-          </select>
-        </div>
-
-        <div class="col-12 col-md-3" id="kindBox" style="display:none;">
-          <label class="form-label fw-bold">Exception</label>
-          <select class="form-select" id="kind">
-            <option value="missing_any">Missing IN or OUT</option>
-            <option value="missing_out">Missing OUT</option>
-            <option value="missing_in">Missing IN</option>
           </select>
         </div>
 
@@ -196,12 +165,8 @@
       document.getElementById("dailyBox").style.display = (t==="daily") ? "" : "none";
       document.getElementById("monthBox").style.display = (t==="monthly") ? "" : "none";
       document.getElementById("yearBox").style.display = (t==="monthly" || t==="yearly") ? "" : "none";
-      const needsRange = (t==="trends" || t==="variance" || t==="exceptions");
-      document.getElementById("trendFromBox").style.display = needsRange ? "" : "none";
-      document.getElementById("trendToBox").style.display = needsRange ? "" : "none";
-      document.getElementById("periodBox").style.display = (t==="insights" || t==="top_departments") ? "" : "none";
-      document.getElementById("groupBox").style.display = (t==="variance") ? "" : "none";
-      document.getElementById("kindBox").style.display = (t==="exceptions") ? "" : "none";
+      document.getElementById("trendFromBox").style.display = (t==="trends") ? "" : "none";
+      document.getElementById("trendToBox").style.display = (t==="trends") ? "" : "none";
       document.getElementById("pager").style.display = (t==="daily") ? "" : "none";
     }
 
@@ -308,81 +273,7 @@
           else html += dept.map(r=>`<tr><td colspan="2">${escapeHtml(r.name||"—")}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
           tb(html);
 
-        } else if(ttype==="insights"){
-          const period=document.getElementById('period').value;
-          const res=await apiFetch(`/api/reports/insights?period=${encodeURIComponent(period)}`);
-          document.getElementById("title").textContent = `Top Leave Employees (${res.period})`;
-          const a=res.top_by_minutes||[];
-          const b=res.top_by_requests||[];
-          meta.textContent = `Top lists: ${a.length} + ${b.length}`;
-          th(`<tr><th colspan="5">Top by Minutes</th></tr>
-              <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`);
-          let html='';
-          html += a.length ? a.map(r=>`<tr><td>${escapeHtml(r.emp_no||'—')}</td><td>${escapeHtml(r.full_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="5" class="small-muted">No data</td></tr>`;
-          html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
-          html += `<tr><th colspan="5">Top by Requests</th></tr>`;
-          html += `<tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`;
-          html += b.length ? b.map(r=>`<tr><td>${escapeHtml(r.emp_no||'—')}</td><td>${escapeHtml(r.full_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="5" class="small-muted">No data</td></tr>`;
-          tb(html);
-
-        } else if(ttype==="top_departments"){
-          const period=document.getElementById('period').value;
-          const res=await apiFetch(`/api/reports/top-departments?period=${encodeURIComponent(period)}`);
-          document.getElementById("title").textContent = `Top Leave Departments (${res.period})`;
-          const a=res.top_by_minutes||[];
-          const b=res.top_by_requests||[];
-          meta.textContent = `Top lists: ${a.length} + ${b.length}`;
-          th(`<tr><th colspan="4">Top by Minutes</th></tr>
-              <tr><th>Department</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`);
-          let html='';
-          html += a.length ? a.map(r=>`<tr><td>${escapeHtml(r.department_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="4" class="small-muted">No data</td></tr>`;
-          html += `<tr><td colspan="4" style="height:12px;"></td></tr>`;
-          html += `<tr><th colspan="4">Top by Requests</th></tr>`;
-          html += `<tr><th>Department</th><th class="text-end">Requests</th><th class="text-end">Days</th><th class="text-end">Minutes</th></tr>`;
-          html += b.length ? b.map(r=>`<tr><td>${escapeHtml(r.department_name||'—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.days)}</td><td class="text-end">${escapeHtml(r.minutes)}</td></tr>`).join('') : `<tr><td colspan="4" class="small-muted">No data</td></tr>`;
-          tb(html);
-
-        } else if(ttype==="variance"){
-          const from=document.getElementById('from').value;
-          const to=document.getElementById('to').value;
-          const group=document.getElementById('group').value;
-          const q = buildQuery({ from, to, group });
-          const res=await apiFetch(`/api/reports/variance${q}`);
-          document.getElementById("title").textContent = `Variance (${res.from} → ${res.to}) • group: ${res.group}`;
-          const rows=res.rows||[];
-          meta.textContent = `${rows.length} rows`;
-          const key = (res.group==='employee') ? 'emp_no' : (res.group==='department') ? 'department_name' : 'bucket';
-          th(`<tr><th>${escapeHtml(key)}</th><th class="text-end">Requests</th><th class="text-end">Planned</th><th class="text-end">Actual</th><th class="text-end">Variance</th><th class="text-end">Missing Actual</th></tr>`);
-          if(!rows.length){ tb(`<tr><td colspan="6" class="small-muted">No data</td></tr>`); return; }
-          tb(rows.map(r=>`<tr><td>${escapeHtml(String(r[key]||'').slice(0,10) || '—')}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td><td class="text-end">${escapeHtml(r.variance_minutes)}</td><td class="text-end">${escapeHtml(r.missing_actual_count)}</td></tr>`).join(''));
-
-        } else if(ttype==="exceptions"){
-          const from=document.getElementById('from').value;
-          const to=document.getElementById('to').value;
-          const kind=document.getElementById('kind').value;
-          const q = buildQuery({ from, to, kind });
-          const res=await apiFetch(`/api/reports/exceptions${q}`);
-          document.getElementById("title").textContent = `Security Exceptions (${res.from} → ${res.to}) • ${res.kind}`;
-          const rows=res.rows||[];
-          meta.textContent = `${rows.length} rows`;
-          th(`<tr><th>ID</th><th>Emp No</th><th>Name</th><th>Dept</th><th>Date</th><th>Planned</th><th>Actual</th><th>Status</th></tr>`);
-          if(!rows.length){ tb(`<tr><td colspan="8" class="small-muted">No data</td></tr>`); return; }
-          tb(rows.map(r=>{
-            const planned = `${String(r.planned_out||"").slice(0,5)}-${String(r.planned_in||"").slice(0,5)}`;
-            const actual = (r.actual_out && r.actual_in) ? `${String(r.actual_out).slice(0,5)}-${String(r.actual_in).slice(0,5)}` : '—';
-            return `<tr>
-              <td>#${escapeHtml(r.id)}</td>
-              <td>${escapeHtml(r.emp_no||"—")}</td>
-              <td>${escapeHtml(r.full_name||"—")}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td>
-              <td>${escapeHtml(r.department_name||"—")}</td>
-              <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
-              <td>${escapeHtml(planned)}</td>
-              <td>${escapeHtml(actual)}</td>
-              <td><span class="badge bg-success">FINAL_APPROVED</span></td>
-            </tr>`;
-          }).join(""));
-
-        } else if(ttype==="trends"){
+        } else {
           const from=document.getElementById('from').value;
           const to=document.getElementById('to').value;
           const q = buildQuery({ from, to, group:'day' });
@@ -393,7 +284,6 @@
           const rows=res.rows||[];
           if(!rows.length){ tb(`<tr><td colspan="4" class="small-muted">No data</td></tr>`); return; }
           tb(rows.map(r=>`<tr><td>${escapeHtml(String(r.bucket).slice(0,10))}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join(''));
-
         }
       }catch(e){
         meta.textContent="—";
@@ -404,13 +294,9 @@
     async function downloadCSV(){
       if(!ensureRole()) return;
       const type=document.getElementById("type").value;
-      if(!['daily','insights','top_departments'].includes(type)){
-        showToast('CSV export supports Daily / Top Employees / Top Departments only. Use XLSX.','warning');
-        return;
-      }
+      if(type!=='daily'){ showToast('CSV export supports Daily only. Use XLSX.','warning'); return; }
       const extra={ format:'csv', type };
-      if(type==='daily') extra.date=document.getElementById('date').value;
-      if(type==='insights' || type==='top_departments') extra.period=document.getElementById('period').value;
+      extra.date=document.getElementById('date').value;
 
       const q = buildQuery(extra);
       try{
@@ -445,9 +331,6 @@
       if(type==='monthly'){ extra.year=document.getElementById('year').value; extra.month=document.getElementById('month').value; }
       if(type==='yearly'){ extra.year=document.getElementById('year').value; }
       if(type==='trends'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.group='day'; }
-      if(type==='insights' || type==='top_departments'){ extra.period=document.getElementById('period').value; }
-      if(type==='variance'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.group=document.getElementById('group').value; }
-      if(type==='exceptions'){ extra.from=document.getElementById('from').value; extra.to=document.getElementById('to').value; extra.kind=document.getElementById('kind').value; }
 
       const q = buildQuery(extra);
       try{
