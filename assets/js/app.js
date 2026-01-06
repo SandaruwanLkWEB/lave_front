@@ -62,7 +62,9 @@ function escapeHtml(str){
 function showToast(message, type="info"){
   const id = "t" + Math.random().toString(16).slice(2);
   const container = document.getElementById("toastContainer");
+  // Fallbacks (important for Android WebView or when Bootstrap JS CDN is blocked)
   if (!container) return alert(message);
+  if (!window.bootstrap || !bootstrap.Toast) return alert(message);
   const bg = type === "success" ? "text-bg-success" :
              type === "danger" ? "text-bg-danger" :
              type === "warning" ? "text-bg-warning" : "text-bg-primary";
