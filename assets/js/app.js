@@ -1,4 +1,4 @@
-const BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.BASE_URL) || "https://testingback-production.up.railway.app";
+const BASE_URL = (window.APP_CONFIG && window.APP_CONFIG.BASE_URL) || "https://lavebackend-production.up.railway.app";
 
 function getToken(){ return localStorage.getItem("token") || ""; }
 function getUser(){ try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } }
