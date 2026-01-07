@@ -110,10 +110,11 @@
           recent.innerHTML="";
           r.forEach(x=>{
             const planned=`${String(x.planned_out||"").slice(0,5)}-${String(x.planned_in||"").slice(0,5)}`;
+            const fullName = x.full_name ?? x.unregistered_name ?? "—";
             recent.insertAdjacentHTML("beforeend",`
               <tr>
                 <td>#${escapeHtml(x.id)}</td>
-                <td>${escapeHtml(x.full_name||"—")}${x.is_unregistered ? ` <span class="badge bg-appealed">UNREG</span>`:""}</td>
+                <td>${escapeHtml(fullName)}${x.is_unregistered ? ` <span class="badge bg-appealed">UNREG</span>`:""}</td>
                 <td>${escapeHtml(x.department_name||"—")}</td>
                 <td>${escapeHtml(String(x.date||"").slice(0,10))}</td>
                 <td>${escapeHtml(planned)}</td>

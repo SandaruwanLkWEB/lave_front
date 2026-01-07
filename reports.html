@@ -217,12 +217,16 @@
           const rows=res.rows||[];
           if(!rows.length){ tb(`<tr><td colspan="9" class="small-muted">No records</td></tr>`); return; }
           tb(rows.map(r=>{
+            // Unregistered requests don't have a users table join, so backend may return
+            // unregistered_emp_id / unregistered_name instead of emp_no / full_name.
+            const empNo = r.emp_no ?? r.unregistered_emp_id ?? "—";
+            const fullName = r.full_name ?? r.unregistered_name ?? "—";
             const planned = `${String(r.planned_out||"").slice(0,5)}-${String(r.planned_in||"").slice(0,5)}`;
             const actual = (r.actual_out && r.actual_in) ? `${String(r.actual_out).slice(0,5)}-${String(r.actual_in).slice(0,5)}` : '—';
             return `<tr>
               <td>#${escapeHtml(r.id)}</td>
-              <td>${escapeHtml(r.emp_no||"—")}</td>
-              <td>${escapeHtml(r.full_name||"—")}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td>
+              <td>${escapeHtml(empNo)}</td>
+              <td>${escapeHtml(fullName)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td>
               <td>${escapeHtml(r.department_name||"—")}</td>
               <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
               <td>${escapeHtml(planned)}<div class="small-muted">${escapeHtml(actual)}</div></td>
@@ -245,7 +249,11 @@
               <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`);
           let html = "";
           if(!emp.length) html += `<tr><td colspan="5" class="small-muted">No employee data</td></tr>`;
-          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          else html += emp.map(r=>{
+            const empNo = r.emp_no ?? r.unregistered_emp_id ?? "—";
+            const fullName = r.full_name ?? r.unregistered_name ?? "—";
+            return `<tr><td>${escapeHtml(empNo)}</td><td>${escapeHtml(fullName)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`;
+          }).join("");
           html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
           html += `<tr><th colspan="5">By Department</th></tr>`;
           html += `<tr><th colspan="2">Dept</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`;
@@ -265,7 +273,11 @@
               <tr><th>Emp No</th><th>Name</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`);
           let html="";
           if(!emp.length) html += `<tr><td colspan="5" class="small-muted">No employee data</td></tr>`;
-          else html += emp.map(r=>`<tr><td>${escapeHtml(r.emp_no)}</td><td>${escapeHtml(r.full_name)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`).join("");
+          else html += emp.map(r=>{
+            const empNo = r.emp_no ?? r.unregistered_emp_id ?? "—";
+            const fullName = r.full_name ?? r.unregistered_name ?? "—";
+            return `<tr><td>${escapeHtml(empNo)}</td><td>${escapeHtml(fullName)}${r.is_unregistered?` <span class="badge bg-appealed">UNREG</span>`:""}</td><td class="text-end">${escapeHtml(r.requests)}</td><td class="text-end">${escapeHtml(r.planned_minutes)}</td><td class="text-end">${escapeHtml(r.actual_minutes)}</td></tr>`;
+          }).join("");
           html += `<tr><td colspan="5" style="height:12px;"></td></tr>`;
           html += `<tr><th colspan="5">By Department</th></tr>`;
           html += `<tr><th colspan="2">Dept</th><th class="text-end">Requests</th><th class="text-end">Planned Min</th><th class="text-end">Actual Min</th></tr>`;
