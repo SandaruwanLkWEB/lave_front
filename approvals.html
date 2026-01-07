@@ -92,7 +92,7 @@
           body.insertAdjacentHTML("beforeend",`
             <tr>
               <td>${escapeHtml(r.id)}</td>
-              <td>${escapeHtml(r.full_name||r.employee_name||r.emp_no||"—")}</td>
+              <td>${escapeHtml(r.full_name||r.employee_name||r.unregistered_name||r.emp_no||r.unregistered_emp_id||"—")}</td>
               <td>${escapeHtml(String(r.date||"").slice(0,10))}</td>
               <td>${escapeHtml(String(r.planned_out||r.out_time||"").slice(0,5))}</td>
               <td>${escapeHtml(String(r.planned_in||r.in_time||"").slice(0,5))}</td>
