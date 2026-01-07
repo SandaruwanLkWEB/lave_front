@@ -4,4 +4,4 @@
 window.APP_CONFIG = window.APP_CONFIG || {};
 window.APP_CONFIG.BASE_URL = window.APP_CONFIG.BASE_URL
   || localStorage.getItem('BASE_URL')
-  || "https://testingback-production.up.railway.app";
+  || "https://lavebackend-production.up.railway.app";
